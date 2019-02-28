@@ -1,0 +1,157 @@
+"""
+BowlingScore.py
+v 1.0
+Feb-20-2019
+By: Nick Kpabitey
+
+"""
+
+
+class BowlingScoreCalculator:
+
+    def __init__(self):
+        # Create array to hold all roll values
+        self.rolls_array = []
+        for index in range(0, 21, 1):
+            self.rolls_array.append(-99)
+
+    def get_input(self, prompt):
+        return_value = input(prompt)
+        acceptable_values = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'x', 'X', '/', '-']
+        while return_value not in acceptable_values:
+            print("Not acceptable input please try again")
+            return_value = input(prompt)
+        return return_value
+
+    def get_score(self):
+        frame = 1
+        current_index = 0
+
+        print("\t\tBowling Score Calculator\n\t\t------------------------")
+
+        print("\tInputs guied\n\t------------")
+        print('\t"X" for strike')
+        print('\t"/" for spare')
+        print('\t"-" for miss')
+        print('\tNumber between (0, 10) for pins knocked down')
+
+        while frame <= 10:
+            strike = False
+            # Take in user input for rolls of each frame
+            print("Frame {} rolls:".format(str(frame)))
+            rolls = []
+            roll1 = self.get_input('  Roll 1 score: ')
+            if (roll1 == 'x') or (roll1 == 'X') or (roll1 == '10'):
+                rolls.append(10)
+                if frame < 10:
+                    strike = True
+                elif frame == 10:
+                    strike = None
+            elif (roll1 == '-'):
+                rolls.append(0)
+            else:
+                rolls.append(int(roll1))
+            if not strike:
+                roll2 = self.get_input('  Roll 2 score: ')
+                if (roll2 == 'x') or (roll2 == 'X') or (roll2 == '10'):
+                    rolls.append(10)
+                elif (roll2 == '/'):
+                    rolls.append(10 - int(roll1))
+                    if (frame == 10):
+                        strike = None
+                elif (roll2 == '-'):
+                    rolls.append(0)
+                else:
+                    rolls.append(int(roll2))
+
+            if (strike is None) and (frame == 10):
+                bonus_roll = self.get_input('  Bonus roll score: ')
+                if (bonus_roll == 'x') or (bonus_roll == 'X') or (bonus_roll == '10'):
+                    rolls.append(10)
+                    if frame < 10:
+                        strike = True
+                elif (bonus_roll == '-'):
+                    rolls.append(0)
+                else:
+                    rolls.append(int(bonus_roll))
+
+            # Add input for current frame to rolls_array
+            if len(rolls) == 1:
+                self.rolls_array[current_index] = rolls[0]
+            elif len(rolls) == 2:
+                self.rolls_array[current_index] = rolls[0]
+                self.rolls_array[current_index + 1] = rolls[1]
+            else:   # This handles the bonus round of the 10th frame if strike or or spare
+                self.rolls_array[current_index] = rolls[0]
+                self.rolls_array[current_index + 1] = rolls[1]
+                self.rolls_array[current_index + 2] = rolls[2]
+
+            current_index += 2
+            frame += 1
+
+        self.calculate_score()  # Call method to calculate score for the game
+
+    def strike_score(self, n):   # A method to score a strike
+        strike_score = 0
+
+        if n == 18:  # The tenth frame
+            return self.rolls_array[19] + self.rolls_array[20] + 10
+
+        # Get the values for the next three rolls in case another strike was thrown
+        roll1 = self.rolls_array[n + 2]
+        roll2 = self.rolls_array[n + 3]
+        roll3 = self.rolls_array[n + 4]
+
+        # Handle error conditions in which the second roll was not thrown
+        if ((roll1 == 10 and roll3 == -99) or (roll1 < 10 and roll2 == -99)):
+            return roll1 + 10
+
+        strike_score = strike_score + roll1   # Add first roll to score
+
+        if roll1 == 10 and roll2 == -99:  # Another strike was thrown so skip next throw
+            strike_score = strike_score + roll3
+        else:
+            strike_score = strike_score + roll2  # Not a strike so add next throw
+
+        return strike_score + 10  # Return total score for the strike
+
+    def spare_score(self, n):    # A method to spare a strike
+        roll1 = self.rolls_array[n + 2]   # Get value for next roll
+
+        if roll1 == -99:  # Handle error condition where next roll was not thrown
+            return 10
+
+        return roll1 + 10  # Return total score for the spare
+
+    def calculate_score(self):
+        # Initialize variables
+        roll1 = 0
+        roll2 = 0
+        score = 0
+        current_score = 0
+
+        for i in range(0, 20, 2):
+            # Loop through the rolls_array and get the rolls for each frame to calculate the score
+            roll1 = self.rolls_array[i]
+            roll2 = self.rolls_array[i + 1]
+
+            if roll1 == 10:  # A strike was thrown
+                # Call method to score a strike
+                current_score = self.strike_score(i)
+            elif roll1 + roll2 == 10:   # A spare was thrown
+                # Call method to score a strike
+                current_score = self.spare_score(i)
+            else:  # A normal throw
+                if roll1 != -99:  # Prevent error if ball not thrown
+                    current_score = current_score + roll1
+                if roll2 != -99:  # Prevent error if ball not thrown
+                    current_score = current_score + roll2
+
+            score = score + current_score
+            current_score = 0
+
+        print('Final score: ' + str(score))
+
+
+x = BowlingScoreCalculator()  # Create new instance of the BowlingScore class
+x.get_score()  # Call the get_score method which will take in user input
